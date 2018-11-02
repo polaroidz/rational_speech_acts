@@ -1,0 +1,49 @@
+const statePrior = function () {
+  uniformDraw([0, 1, 2, 3])
+}
+
+const utterancePrior = function () {
+  uniformDraw(["all", "some", "none"])
+}
+
+const literalMeaning = {
+  all: function(state) { return state >= 3 },
+  some: function(state) { return state <= 3 && state >= 1 },
+  none: function(state) { return state == 0 }
+}
+
+const literalListener = function(utt) {
+  Infer({model: function() {
+    const state = statePrior()
+    const meaning = literalMeaning[utt]
+
+    condition(meaning(state))
+
+    return state
+  }})
+}
+
+const alpha = 1.0
+
+const pragmaticSpeaker = function(state) {
+  Infer({model: function(){
+    const utt = utterancePrior()
+
+    factor(alpha * literalListener(utt).score(state))
+
+    return utt
+  }})
+}
+
+
+const pragmaticListener = function(utt) {
+  Infer({model: function() {
+    const state = statePrior()
+
+    observe(pragmaticSpeaker(state), utt)
+
+    return state
+  }})
+}
+
+pragmaticListener("some")

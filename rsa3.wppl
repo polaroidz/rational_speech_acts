@@ -1,0 +1,69 @@
+const numTrue = function(state) {
+  const fun = function(x) {
+    x ? 1 : 0
+  }
+  sum(map(fun, state))
+}
+
+const baserate = 0.8
+
+const statePrior = function () {
+  const s1 = flip(baserate)
+  const s2 = flip(baserate)
+  const s3 = flip(baserate)
+
+  return [s1, s2, s3]
+}
+
+const belief = function (actualState, access) {
+  const fun = function (accessVal, stateVal) {
+    accessVal ? stateVal : uniformDraw(statePrior())
+  }
+  map2(fun, access, actualState)
+}
+
+const utterancePrior = function () {
+  uniformDraw(["all", "some", "none"])
+}
+
+const literalMeaning = {
+  all: function(state) { return all(function(s){s}, state); },
+  some: function(state) { return any(function(s){s}, state); },
+  none: function(state) { return all(function(s){s==false}, state); }
+}
+
+const literalListener = function(utt) {
+  Infer({model: function() {
+    const state = statePrior()
+    const meaning = literalMeaning[utt]
+
+    condition(meaning(state))
+
+    return state
+  }})
+}
+
+const alpha = 1.0
+
+const pragmaticSpeaker = function(access, state) {
+  Infer({model: function(){
+    const beliefState = belief(state, access)
+    const utt = utterancePrior()
+
+    factor(alpha * literalListener(utt).score(beliefState))
+
+    return utt
+  }})
+}
+
+const pragmaticListener = function(access, utt) {
+  Infer({model: function() {
+    const state = statePrior()
+
+    observe(pragmaticSpeaker(access, state), utt)
+
+    return numTrue(state)
+  }})
+}
+
+pragmaticListener([true, false, false], "some")

@@ -1,0 +1,65 @@
+const contexts = [
+  "credit card debt",
+  "credit card limit",
+  "bank account",
+  "investing"
+]
+
+const utterances = [
+  "credit",
+  "credit card",
+  "limit",
+  "debt",
+  "investing",
+  "account",
+  "bank"
+]
+
+const alpha = 1.0
+
+const contextPrior = function() {
+  uniformDraw(contexts)
+}
+
+const utterancePrior = function() {
+  uniformDraw(utterances)
+}
+
+const meaning = function(utterance, ctx) {
+  ctx.includes(utterance)
+}
+
+const literalListener = function(utterance) {
+  Infer({model: function(){
+    const ctx = contextPrior()
+    const uttTruthVal = meaning(utterance, ctx)
+
+    condition(uttTruthVal == true)
+
+    return ctx
+  }})
+}
+
+const speaker = function(ctx){
+  Infer({model: function(){
+    const utterance = utterancePrior()
+    
+    factor(alpha * literalListener(utterance).score(ctx))
+    
+    return utterance
+  }})
+}
+
+const pragmaticListener = function(utterance){
+  Infer({model: function(){
+    const ctx = contextPrior()
+
+    observe(speaker(ctx), utterance)
+
+    return ctx
+  }})
+}
+
+display("Running for query: " + argv.query)
+display(pragmaticListener(argv.query))
+
