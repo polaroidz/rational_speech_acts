@@ -66,4 +66,23 @@ const pragmaticListener = function(access, utt) {
   }})
 }
 
-pragmaticListener([true, false, false], "some")
+const parseAccessString = function (accessString) {
+  const fun = function(val) {
+    val == "true" ? true : false
+  }
+  map(fun, accessString.split(","))
+}
+
+// Assumindo que por padrao o speaker tem total conhecimento do estado
+// do mundo.
+const accessString = argv.access ? argv.access : "true,true,true"
+const access = parseAccessString(accessString)
+
+const query = argv.query
+
+if (query == undefined) {
+  display("Query nao informada")
+  process.exit(1)
+}
+
+pragmaticListener(access, query)
